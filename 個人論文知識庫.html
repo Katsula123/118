@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>個人論文知識庫</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F9FAFB;
+      --border: #E5E7EB;
+      --text: #111827;
+      --muted: #6B7280;
+      --accent: #1E3A8A;
+      --accent-soft: #EFF6FF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F3F4F6;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* Top Minimal Bar */
+    .topbar {
+      width: 100%;
+      max-width: 1120px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 0 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    .badge {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* 16:9 Slide Stage */
+    .stage {
+      width: 100%;
+      max-width: 1120px;
+      aspect-ratio: 16 / 9;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      height: 100%;
+      padding: 48px 56px;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    .slide-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      margin-top: 8px;
+      font-weight: 400;
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Directory Grid on Cover */
+    .paper-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .paper-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .paper-card:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .paper-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .paper-card-meta {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .paper-card-action {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      white-space: nowrap;
+      margin-left: 16px;
+    }
+
+    /* Two-column layout */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 22px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .card p, .card li {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+
+    .card ul {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .metric {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .eq-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 8px 0;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .eq-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .slide-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* TOC Drawer */
+    .toc-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.25);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toc-overlay.open {
+      display: flex;
+    }
+
+    .toc-modal {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 90%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .toc-modal h3 {
+      font-size: 16px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toc-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--text);
+    }
+
+    .toc-item:hover {
+      background: var(--surface);
+      color: var(--accent);
+    }
+
+    @media print {
+      body { background: #FFF; padding: 0; }
+      .topbar, .toc-overlay { display: none !important; }
+      .stage { border: none; box-shadow: none; max-width: 100%; aspect-ratio: auto; }
+      .slide { display: flex !important; page-break-after: always; min-height: 95vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="brand">個人論文知識庫</span>
+      <span class="badge">已收錄 1 篇論文</span>
+    </div>
+    <div class="controls">
+      <button id="btn-toc" onclick="toggleToc()">目錄 (M)</button>
+      <button id="btn-prev" onclick="prevSlide()">← 上一頁</button>
+      <span id="page-indicator" style="min-width: 48px; text-align: center;">1 / 3</span>
+      <button id="btn-next" onclick="nextSlide()">下一頁 →</button>
+      <button onclick="window.print()">列印 / PDF</button>
+    </div>
+  </div>
+
+  <main class="stage">
+    <!-- Slide 1: Cover & Paper Directory -->
+    <section class="slide active" data-title="目錄總覽">
+      <div class="slide-header">
+        <div class="eyebrow">Personal Paper Knowledge Base</div>
+        <h1>個人論文知識庫</h1>
+        <p class="subtitle">持續累積、結構化整理的個人文獻回顧資料夾（極簡索引版）</p>
+      </div>
+      <div class="slide-body" style="justify-content: flex-start;">
+        <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">已閱讀與收錄論文清單（點擊可直接跳轉）</div>
+        <div class="paper-list">
+          <div class="paper-card" onclick="goToSlide(1)">
+            <div>
+              <div class="paper-card-title">01. 強迫對流效應對微米級填孔電鍍銅製程的影響</div>
+              <div class="paper-card-meta">許家福（2011）· 國立臺灣海洋大學碩論 · COMSOL / CDA 對流性吸附 / 微盲孔質傳</div>
+            </div>
+            <div class="paper-card-action">進入回顧 →</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>資料來源：Wiki 知識庫（index.md）</span>
+        <span>快捷鍵：← / → 換頁 · M 開啟目錄</span>
+      </div>
+    </section>
+
+    <!-- Slide 2: Paper 01 Overview & Equations -->
+    <section class="slide" data-title="01 許家福 (2011) — 問題與模型">
+      <div class="slide-header">
+        <div class="eyebrow">Paper #01 · 2011 · 國立臺灣海洋大學機械與機電工程學系</div>
+        <h2>強迫對流效應對微米級填孔電鍍銅製程的影響</h2>
+        <p class="subtitle">作者：許家福（指導教授：莊水旺）｜ 來源：RAW/000101 強迫對流效應對微米級填孔電鍍銅製程的影響.pdf</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">核心問題與 CDA 理論基礎</div>
+            <ul>
+              <li><strong>製程痛點</strong>：HDI PCB 微盲孔縱橫比提高，孔底離子補充不足，容易產生空洞（Void）與細縫缺陷。</li>
+              <li><strong>CDA 對流性吸附</strong>：$\text{Cl}^-$ 帶負電易受陰極排斥；強迫對流提供動能將 $\text{Cl}^-$ 送至孔外與孔口，促進 PEG 吸附抑制沉積，使孔底相對加速（Bottom-up Filling）。</li>
+              <li><strong>模擬參數空間</strong>：入口流速 $0.03\text{--}0.12\text{ m/s}$、孔徑/孔深 $60\text{--}120\,\mu\text{m}$、側壁角 $90^\circ / 95^\circ$。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-title">COMSOL 多重物理耦合控制方程式</div>
+            <div class="eq-label">1. 不可壓縮 Navier-Stokes（流場）</div>
+            <div class="eq-box">$$\rho \mathbf{u} \cdot \nabla \mathbf{u} = \nabla \cdot \left[-p\mathbf{I} + \eta (\nabla \mathbf{u} + (\nabla \mathbf{u})^T)\right] + \mathbf{B}$$</div>
+            <div class="eq-label">2. Nernst-Planck（擴散、電遷移與對流質傳）</div>
+            <div class="eq-box">$$\frac{\partial c_i}{\partial t} + \nabla \cdot \left(-D_i \nabla c_i - z_i u_{mi} F c_i \nabla V + c_i \mathbf{u}\right) = R_i$$</div>
+            <div class="eq-label">3. Butler-Volmer（陰極電流密度分佈）</div>
+            <div class="eq-box">$$i = \frac{C_{\text{Cu}^{2+}}}{C^0_{\text{Cu}^{2+}}} \sum z i_0 \left\{ \exp\left[-\frac{\alpha F \eta}{RT}\right] - \exp\left[\frac{(1-\alpha)F\eta}{RT}\right] \right\}$$</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>對應 Wiki：[[paper-2011-hsu-forced-convection-microvia]]</span>
+        <span>01 / 研究背景與數學模型</span>
+      </div>
+    </section>
+
+    <!-- Slide 3: Paper 01 Key Findings -->
+    <section class="slide" data-title="01 許家福 (2011) — 核心結論與限制">
+      <div class="slide-header">
+        <div class="eyebrow">Paper #01 · 核心定量結論與研究限制</div>
+        <h2>關鍵發現：強迫對流的穿透極限與幾何效應</h2>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-title">01 / 縱橫比穿透極限</div>
+            <div class="metric">AR &gt; 1.2</div>
+            <p>盲孔縱橫比超過 <strong>1.2</strong> 時，流體慣性力無法克服孔壁黏滯力，孔底 $\text{Cu}^{2+}$ 通量比降至 $&lt;0.1$；縱橫比 $&gt;1.25$ 時 $\text{Cl}^-$ 通量比 $&lt;0.001$，孔底退化為自然擴散。</p>
+          </div>
+          <div class="card">
+            <div class="card-title">02 / 孔內側壁非對稱性</div>
+            <div class="metric">15–23% / 2×</div>
+            <p>受渦流衝擊影響，右端側壁 $\text{Cu}^{2+}$ 通量高出左端 <strong>15–23%</strong>（加大孔徑可改善）；$\text{Cl}^-$ 因陰極排斥，左右差異達 <strong>2 倍以上</strong>，無法靠調高流速消除。</p>
+          </div>
+          <div class="card">
+            <div class="card-title">03 / 孔壁傾斜 5° 效應</div>
+            <div class="metric">-5% ~ -10%</div>
+            <p>側壁傾斜 $5^\circ$（$95^\circ$）<strong>無法提升孔底質傳</strong>，反而改變渦流導向使孔底 $\text{Cu}^{2+}$ 與 $\text{Cl}^-$ 通量下降 <strong>5–10%</strong>，左端 $\text{Cl}^-$ 通量亦降低 7–17%。</p>
+          </div>
+        </div>
+        <div class="card" style="margin-top: 20px; padding: 14px 20px;">
+          <p style="font-size: 13px; color: var(--muted);">
+            <strong style="color: var(--text);">研究限制與後續方向：</strong>
+            本研究假設固定幾何邊界且簡化了添加劑化學反應，尚未納入 PEG 與 SPS 之競爭性吸附消耗與動態移動邊界沉積；未來可結合掃描伏安法動力參數進行修正。
+          </p>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>對應 Wiki：[[concept-cda-convection-dependent-adsorption]] · [[concept-microvia-copper-electroplating-mass-transfer]]</span>
+        <span>01 / 實驗結果與限制</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- TOC Modal -->
+  <div id="toc-overlay" class="toc-overlay" onclick="if(event.target===this) toggleToc()">
+    <div class="toc-modal">
+      <h3>頁面目錄</h3>
+      <div id="toc-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    let current = 0;
+
+    function updateUI() {
+      slides.forEach((s, i) => s.classList.toggle('active', i === current));
+      document.getElementById('page-indicator').textContent = `${current + 1} / ${slides.length}`;
+      document.getElementById('btn-prev').disabled = current === 0;
+      document.getElementById('btn-next').disabled = current === slides.length - 1;
+    }
+
+    function goToSlide(index) {
+      if (index >= 0 && index < slides.length) {
+        current = index;
+        updateUI();
+      }
+    }
+
+    function nextSlide() { goToSlide(current + 1); }
+    function prevSlide() { goToSlide(current - 1); }
+
+    function toggleToc() {
+      const overlay = document.getElementById('toc-overlay');
+      overlay.classList.toggle('open');
+    }
+
+    function buildToc() {
+      const list = document.getElementById('toc-list');
+      list.innerHTML = '';
+      slides.forEach((s, i) => {
+        const item = document.createElement('div');
+        item.className = 'toc-item';
+        item.innerHTML = `<span>${s.dataset.title || '頁面 ' + (i + 1)}</span><span style="color: var(--muted);">${i + 1}</span>`;
+        item.onclick = () => { goToSlide(i); toggleToc(); };
+        list.appendChild(item);
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleToc();
+      } else if (e.key === 'Escape') {
+        document.getElementById('toc-overlay').classList.remove('open');
+      }
+    });
+
+    buildToc();
+    updateUI();
+  </script>
+</body>
+</html>
